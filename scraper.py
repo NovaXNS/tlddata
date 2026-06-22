@@ -81,6 +81,8 @@ def parse_detail_page(html: str, tld_info: dict) -> dict:
         "whois_server": "",
         "rdap_server": "",
         "registration_url": "",
+        "iana_reports": [],
+        "icann_registrar_system": False,
         "record_last_updated": "",
         "registration_date": "",
     }
@@ -113,6 +115,22 @@ def parse_detail_page(html: str, tld_info: dict) -> dict:
                         host = cols[0].get_text(strip=True)
                         ips = [ip.strip() for ip in cols[1].get_text("\n", strip=True).split("\n") if ip.strip()]
                         result["name_servers"].append({"host": host, "ip_addresses": ips})
+        elif title == "IANA Reports":
+            ul = h2.find_next("ul")
+            if ul:
+                for li in ul.find_all("li"):
+                    a = li.find("a")
+                    if a:
+                        title_text = a.get_text(strip=True)
+                        href = a.get("href", "")
+                        link = BASE_URL + href if href.startswith("/") else href
+                        date_match = re.search(r"\((\d{4}-\d{2}-\d{2})\)", li.get_text())
+                        date = date_match.group(1) if date_match else ""
+                        result["iana_reports"].append({
+                            "title": title_text,
+                            "link": link,
+                            "date": date,
+                        })
 
     for p in soup.find_all("p"):
         text = p.get_text(" ", strip=True)
@@ -127,6 +145,7 @@ def parse_detail_page(html: str, tld_info: dict) -> dict:
             result["registration_url"] = a["href"]
 
     all_text = soup.get_text(" ", strip=True)
+    result["icann_registrar_system"] = "managed under ICANN" in all_text
     m = re.search(r"Record last updated\s+(\d{4}-\d{2}-\d{2})", all_text)
     if m:
         result["record_last_updated"] = m.group(1)
