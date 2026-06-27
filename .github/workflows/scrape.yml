@@ -1,8 +1,8 @@
-name: Monthly IANA TLD Scrape
+name: Quarterly IANA TLD Scrape
 
 on:
   schedule:
-    - cron: '0 0 1 * *'
+    - cron: '0 0 1 1,4,7,10 *'
   workflow_dispatch:
 
 permissions:
